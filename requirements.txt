@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+httpx
+sqlalchemy
+alembic
+pydantic
+python-dotenv
+yfinance
+confluent-kafka
+psycopg2-binary
+redis
+kafka-python

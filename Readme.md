@@ -36,3 +36,7 @@ A **production-ready FastAPI microservice** that:
 - GitHub Actions CI
 - Optional deployment to Heroku/AWS
 ---
+
+## System Architecture
+![image](https://github.com/user-attachments/assets/9667daf3-d702-4141-80e1-6d1e981a700d)
+![image](https://github.com/user-attachments/assets/e52f163d-c92a-4eeb-a89f-f9935fb0257a)

@@ -1,46 +1,23 @@
-from kafka import KafkaProducer
+from confluent_kafka import Producer
 import json
-import os
 import time
 
-# app/services/Kafka/producer.py
-producer = KafkaProducer(
-    bootstrap_servers=os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092'),
-    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-    client_id='fastapi-service',
-    retries=3
-)
+producer_conf = {
+    'bootstrap.servers': 'localhost:9092'
+}
+producer = Producer(producer_conf)
 
-
-def delivery_report(err, msg):
+def publish_price_update(data, retries=3):
     """
-    Callback function to handle delivery reports from Kafka.
-    
-    :param err: Error if any occurred during message delivery.
-    :param msg: The message that was attempted to be sent.
+    Publish price update to Kafka topic with retry logic.
     """
-    if err is not None:
-        print(f"Message delivery failed: {err}")
-    else:
-        print(f"Message delivered successfully: {msg.topic} [{msg.partition}] @ {msg.offset}")
-
-
-def send_price_event(price_data: dict, max_retries: int = 3, topic='price_events'):
-    """
-    Sends a price event to the Kafka topic.
-    
-    :param price_data: Dictionary containing price data.
-    """
-    payload = json.dumps(price_data)
-
-    for attempt in range(max_retries):
+    payload = json.dumps(data).encode('utf-8')
+    for attempt in range(1, retries + 1):
         try:
-            producer.send(topic, value=payload)
+            producer.produce('price-events', value=payload)
             producer.flush()
-            print(f"Price event sent: {price_data}")
-        except BufferError as e:
-            print(f"BufferError: {e}. Retrying...")
-            time.sleep(1)
+            return
         except Exception as e:
-            print(f"Failed to send price event: {e}")
-    print("[Kafka] Failed to produce message after retries")
+            print(f"Kafka publish attempt {attempt} failed: {e}")
+            time.sleep(2 ** attempt)  # Exponential backoff
+    print("Failed to publish message to Kafka after retries.")

@@ -1,11 +1,12 @@
-from pydantic import BaseSettings
+import os
+from dotenv import load_dotenv
 
-class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://posgres:posgres@localhost/market_data"
-    KAFKA_BORKER_URL: str = "kafka:9092"
+load_dotenv(".env")
+
+class Settings:
+    DATABASE_URL: str = "postgresql://posgres:root@localhost/market_data"
+    KAFKA_BROKER_URL: str = "kafka:9092"
     KAFKA_TOPIC: str = "price_events"
-
-    class Config:
-        env_file = ".env"
+    REDIS_URL: str = "redis://localhost:6379/0"
 
 Settings = Settings()

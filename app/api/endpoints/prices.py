@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Query, HTTPException
+from fastapi.responses import JSONResponse
 from app.schemas.price import PriceResponse
 from app.services.providers import get_price_by_provider
 
@@ -12,11 +13,9 @@ def get_latest_price(symbol: str = Query(...), provider: str = Query("yfinance")
     if not symbol:
         raise HTTPException(status_code=400, detail="Symbol query parameter is required")
 
-    if provider.lower() != "yfinance":
-        raise HTTPException(status_code=400, detail="Unsupported provider. Only 'yfinance' is supported.")
-
     try:
         price_data = get_price_by_provider(symbol, provider)
-        return price_data
+        response = PriceResponse(**price_data)
+        return response
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -1,60 +1,53 @@
-from kafka import KafkaConsumer
-import json 
-from sqlalchemy.orm import Session
+from confluent_kafka import Consumer
+import json
+from sqlalchemy import desc
 from app.core.db import SessionLocal
 from app.models.price import Price
-from app.models.price import Price
 from app.models.moving_average import MovingAverage
-from statistics import mean
 
-consumer = KafkaConsumer(
-    'price-events',
-    bootstrap_servers='localhost:9092',
-    value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-    group_id='ma-consumer-group',
-)
+conf = {
+    'bootstrap.servers': 'localhost:9092',
+    'group.id': 'ma-consumer-group',
+    'auto.offset.reset': 'earliest'
+}
+consumer = Consumer(conf)
+consumer.subscribe(['price-events'])
 
-def fetch_last_prices(db: Session, symbol: str, limit: int = 5):
-    """
-    Fetch the last 'limit' prices for a given symbol from the database.
-    
-    :param db: Database session.
-    :param symbol: The symbol to fetch prices for.
-    :param limit: Number of last prices to fetch.
-    :return: List of Price objects.
-    """
-    return (
-    db.query(Price)
-      .filter(Price.symbol == symbol)
-      .order_by(Price.timestamp.desc())
-      .limit(limit)
-      .all()
-)
+while True:
+    msg = consumer.poll(1.0)
+    if msg is None:
+        continue
+    if msg.error():
+        print(f"Consumer error: {msg.error()}")
+        continue
 
-def save_moving_average(db: Session, symbol: str, moving_average: float):
-    """
-    Save the calculated moving average to the database.
-    
-    :param db: Database session.
-    :param symbol: The symbol for which the moving average is calculated.
-    :param moving_average: The calculated moving average value.
-    """
-    ma_record = MovingAverage(symbol=symbol, moving_average=moving_average)
-    db.add(ma_record)
-    db.commit()
-
-    for msg in consumer:
-        data = msg.value
-        symbol = data.get('symbol')
-        price = data.get('price')
+    try:
+        data = json.loads(msg.value().decode('utf-8'))
+        symbol = data['symbol']
+        price = data['price']
+        timestamp = data.get('timestamp')
 
         db = SessionLocal()
         try:
-            prices = fetch_last_prices(db, symbol)
-            if len(prices) >= 5:
-                avg = mean([p.price for p in prices])
-                save_moving_average(db, symbol, avg)
+            previous_prices = (
+                db.query(Price)
+                .filter(Price.symbol == symbol)
+                .order_by(desc(Price.timestamp))
+                .limit(4)
+                .all()
+            )
+            prices = [price] + [p.price for p in previous_prices]
+            prices = prices[:5]
+            avg = sum(prices) / len(prices)
+
+            print(f"Symbol: {symbol}, 5-point MA: {avg}")
+
+            db_avg = MovingAverage(symbol=symbol, average=avg)
+            db.merge(db_avg)
+            db.commit()
         except Exception as e:
-            print(f"Error processing message: {e}")
+            print(f"Error processing moving average: {e}")
         finally:
             db.close()
+    except Exception as e:
+        print(f"Error decoding message: {e}")

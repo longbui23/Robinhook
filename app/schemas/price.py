@@ -8,3 +8,6 @@ class PriceResponse(BaseModel):
     price: float 
     timestamp: datetime
     provider: str
+
+    class Config:
+        from_attributes = True

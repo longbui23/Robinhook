@@ -17,6 +17,6 @@ def fetch_latest_price(symbol: str):
     return {
         "symbol": symbol,
         "price": float(latest["Close"]),
-        "timestamp": latest.name.to_pydatetime().replace(tzinfo=timezone.utc),
+        "timestamp": latest.name.to_pydatetime().replace(tzinfo=timezone.utc).isoformat(),
         "provider": "yfinance"
     }

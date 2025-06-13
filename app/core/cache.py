@@ -21,4 +21,4 @@ def get_cache(key: str):
     return None
 
 def set_cache(key: str, value: dict, ttl: int = 60):
-    redis_client.set(key, ttl, json.dumps(value))
+    redis_client.set(key, json.dumps(value), ex=ttl)

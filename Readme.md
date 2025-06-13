@@ -9,7 +9,7 @@ A **production-ready FastAPI microservice** that:
 
 ---
 
-## ✅ Tasks Breakdown
+## ✅ Services Breakdown
 
 ### 🧩 Core API
 - FastAPI project structure

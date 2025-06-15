@@ -4,9 +4,10 @@ from sqlalchemy import desc
 from app.core.db import SessionLocal
 from app.models.price import Price
 from app.models.moving_average import MovingAverage
+import os
 
 conf = {
-    'bootstrap.servers': 'localhost:9092',
+    'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
     'group.id': 'ma-consumer-group',
     'auto.offset.reset': 'earliest'
 }

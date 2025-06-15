@@ -1,9 +1,10 @@
 from confluent_kafka import Producer
 import json
 import time
+import os
 
 producer_conf = {
-    'bootstrap.servers': 'localhost:9092'
+    'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 }
 producer = Producer(producer_conf)
 

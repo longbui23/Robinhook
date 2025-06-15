@@ -1,12 +1,17 @@
-from fastapi import FastAPI
-from app.api.endpoints import prices, poll
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from promotheus_fastapi_instrumentator import Instrumentator
+from fastapi import FastAPI
+from app.api.v1.endpoints import prices, poll
+
+from prometheus_fastapi_instrumentator import Instrumentator
+
 
 app = FastAPI(title="Market Data Service")
 
 app.include_router(prices.router, prefix="/prices", tags=["prices"])
-app.include_router(poll.router, prefix="/poll", tags=["polling"])
+app.include_router(poll.router, prefix="/poll", tags=["poll"])
 
 # Add Prometheus metrics endpoint
 Instrumentator().instrument(app).expose(app)

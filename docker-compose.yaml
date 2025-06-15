@@ -13,6 +13,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:root@postgres:5432/market
       - REDIS_URL=redis://redis:6379/0
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     volumes:
       - .:/app
 
@@ -55,7 +56,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   adminer:
@@ -78,6 +79,35 @@ services:
     container_name: grafana
     ports:
       - "3000:3000"
+
+# This service is used to scrape metrics from PostgreSQL and Redis
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:root@postgres:5432/market?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+
+  redis_exporter:
+    image: oliver006/redis_exporter
+    container_name: redis_exporter
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+
+  kafka_exporter:
+    image: danielqsj/kafka-exporter
+    container_name: kafka_exporter
+    ports:
+      - "9308:9308"
+    environment:
+      KAFKA_SERVER: "kafka:9092"
+    depends_on:
+      - kafka
 
 volumes:
   postgres_data:
